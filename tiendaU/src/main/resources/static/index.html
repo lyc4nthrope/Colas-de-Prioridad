@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tienda Universitaria</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h1 class="text-center text-primary">🎓 Tienda Universitaria</h1>
+
+    <!-- Formulario para enviar pedidos -->
+    <form id="pedidoForm" class="my-4">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" class="form-control" id="nombre" placeholder="Nombre" required>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control" id="rol" required>
+                    <option value="">Seleccione Rol</option>
+                    <option value="profesor">Profesor</option>
+                    <option value="administrativo">Administrativo</option>
+                    <option value="estudiante">Estudiante</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-success w-100">Agregar Pedido</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Botón para atender pedido -->
+    <div class="text-center mb-3">
+        <button class="btn btn-warning" onclick="atenderPedido()">📤 Atender siguiente pedido</button>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <h3 class="text-secondary">📝 Cola de Pedidos:</h3>
+    <ul class="list-group" id="listaPedidos"></ul>
+</div>
+
+<script>
+    const form = document.getElementById('pedidoForm');
+    const lista = document.getElementById('listaPedidos');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById('nombre').value;
+        const rol = document.getElementById('rol').value;
+
+        if (!nombre || !rol) return;
+
+        await fetch(`/pedidos/nuevo?nombre=${nombre}&rol=${rol}`, {
+            method: 'POST'
+        });
+
+        form.reset();
+        actualizarLista();
+    });
+
+    async function atenderPedido() {
+        const resp = await fetch('/pedidos/atender');
+        const texto = await resp.text();
+        alert(texto);
+        actualizarLista();
+    }
+
+    async function actualizarLista() {
+        const resp = await fetch('/pedidos/cola');
+        const pedidos = await resp.json();
+
+        lista.innerHTML = "";
+        pedidos.forEach(p => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item';
+            item.textContent = `${p.nombre} (${p.rol}) - prioridad ${p.prioridad}`;
+            lista.appendChild(item);
+        });
+    }
+
+    // Cargar al inicio
+    actualizarLista();
+</script>
+</body>
+</html>
