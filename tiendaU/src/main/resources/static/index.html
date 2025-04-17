@@ -1,87 +1,98 @@
 <!DOCTYPE html>
-<!--html con bootstrap-->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tienda Universitaria</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; }
+        .tienda-banner { text-align: center; margin-top: 20px; }
+        .fila-clientes { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 30px; }
+        .cliente-card { width: 80px; text-align: center; }
+        .cliente-card img { width: 60px; border-radius: 50%; border: 2px solid #666; }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h1 class="text-center text-primary">🎓 Tienda Universitaria</h1>
-
-    <!--Formulario para enviar los pedidos-->
-    <form id="pedidoForm" class="my-4">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" class="form-control" id="nombre" placeholder="Nombre" required>
-            </div>
-            <div class="col-md-4">
-                <select class="form-control" id="rol" required>
-                    <option value="">Seleccione Rol</option>
-                    <option value="profesor">Profesor</option>
-                    <option value="administrativo">Administrativo</option>
-                    <option value="estudiante">Estudiante</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-success w-100">Agregar Pedido</button>
-            </div>
-        </div>
-    </form>
-
-    <!--Botón para atender los pedido-->
-    <div class="text-center mb-3">
-        <button class="btn btn-warning" onclick="atenderPedido()">📤 Atender siguiente pedido</button>
+<body>
+<div class="container">
+    <div class="tienda-banner">
+        <h1 class="text-primary">🛍️ Tienda Universitaria</h1>
+        <img src="img/tienda.png" alt="Tienda" class="img-fluid" style="max-height: 200px;">
+        <p class="text-secondary">Simulación de fila con cola de prioridad</p>
     </div>
 
-    <!--Lista de pedidos-->
-    <h3 class="text-secondary">📝 Cola de Pedidos:</h3>
-    <ul class="list-group" id="listaPedidos"></ul>
+    <!-- Fila dinámica -->
+    <div id="fila" class="fila-clientes"></div>
+
+    <!-- Formulario de pedido -->
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card p-4 shadow-sm">
+                <h4 class="mb-3">Agregar cliente a la fila</h4>
+                <form id="formPedido">
+                    <div class="mb-3">
+                        <input type="text" id="nombre" class="form-control" placeholder="Nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <select id="rol" class="form-select" required>
+                            <option value="1">Profesor (alta prioridad)</option>
+                            <option value="2">Persona con discapacidad (media)</option>
+                            <option value="3">Estudiante (baja)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Agregar a la fila</button>
+                </form>
+                <button onclick="atender()" class="btn btn-danger w-100 mt-3">🧾 Atender siguiente</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!--Javascript-->
 <script>
-    const form = document.getElementById('pedidoForm');
-    const lista = document.getElementById('listaPedidos');
+    const api = '/pedidos';
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('formPedido').addEventListener('submit', async e => {
         e.preventDefault();
         const nombre = document.getElementById('nombre').value;
-        const rol = document.getElementById('rol').value;
-
-        if (!nombre || !rol) return;
-
-        await fetch(`/pedidos/nuevo?nombre=${nombre}&rol=${rol}`, {
-            method: 'POST'
+        const prioridad = parseInt(document.getElementById('rol').value);
+        await fetch(api, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, rol: '', prioridad })
         });
-
-        form.reset();
-        actualizarLista();
+        e.target.reset();
+        cargarFila();
     });
 
-    async function atenderPedido() {
-        const resp = await fetch('/pedidos/atender');
-        const texto = await resp.text();
-        alert(texto);
-        actualizarLista();
-    }
+    async function cargarFila() {
+        const res = await fetch(api);
+        const pedidos = await res.json();
+        const fila = document.getElementById('fila');
+        fila.innerHTML = '';
 
-    async function actualizarLista() {
-        const resp = await fetch('/pedidos/cola');
-        const pedidos = await resp.json();
-
-        lista.innerHTML = "";
         pedidos.forEach(p => {
-            const item = document.createElement('li');
-            item.className = 'list-group-item';
-            item.textContent = `${p.nombre} (${p.rol}) - prioridad ${p.prioridad}`;
-            lista.appendChild(item);
+            const div = document.createElement('div');
+            div.className = 'cliente-card';
+            // avatar placeholder con DiceBear
+            div.innerHTML = `
+          <img src="https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(p.nombre)}" alt="avatar">
+          <small>${p.nombre}</small>
+        `;
+            fila.appendChild(div);
         });
     }
 
-    <!--recargar el inicio-->
-    actualizarLista();
+    async function atender() {
+        const res = await fetch(api + '/atender', { method: 'DELETE' });
+        if (res.ok) {
+            const atendido = await res.json();
+            alert(`Atendiendo a: ${atendido.nombre}`);
+            cargarFila();
+        }
+    }
+
+    // Carga inicial
+    cargarFila();
 </script>
 </body>
 </html>

@@ -1,25 +1,16 @@
 package com.tienda.tiendauniversitaria.model;
 
-import java.util.Locale;
-
 public class Pedido {
     private String nombre;
     private String rol;
-    private int prioridad;
+    private int prioridad; // 1 = discapacidad, 2 = profesor, 3 = estudiante
 
-    public Pedido(String nombre, String rol) {
+    public Pedido() {}
+
+    public Pedido(String nombre, String rol, int prioridad) {
         this.nombre = nombre;
-        this.prioridad = asignarPrioridad(rol);
         this.rol = rol;
-    }
-
-    private int asignarPrioridad(String rol){
-        return switch (rol.toLowerCase()){
-            case "profesor" -> 1;
-            case "administrativo" -> 2;
-            case "estudiante" -> 3;
-            default -> 4;
-        };
+        this.prioridad = prioridad;
     }
 
     public String getNombre() {
@@ -33,7 +24,6 @@ public class Pedido {
     public String getRol() {
         return rol;
     }
-
     public void setRol(String rol) {
         this.rol = rol;
     }
@@ -45,14 +35,4 @@ public class Pedido {
     public void setPrioridad(int prioridad) {
         this.prioridad = prioridad;
     }
-
-    @Override
-    public String toString() {
-        return "Pedido{" +
-                "nombre='" + nombre + '\'' +
-                ", rol='" + rol + '\'' +
-                ", prioridad=" + prioridad +
-                '}';
-    }
 }
-
